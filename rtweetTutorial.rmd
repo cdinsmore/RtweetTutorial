@@ -1,0 +1,166 @@
+---
+title: "rtweet tutorial"
+author: "Chris Dinsmore"
+date: "5/18/2020"
+output: html_document
+---
+
+---
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+#Chris Dinsmore
+#using RTweet to pull Twitter Data
+# See https://rtweet.info/index.html
+#Addiitonal References and Recipes  https://rud.is/books/21-recipes/
+
+
+#Add Packages
+
+```{r, include=FALSE}
+library(rtweet)
+library(dplyr)
+library(tidyverse)
+library(RODBC)
+library(DBI)
+library(RSQLite)
+library(rtweet) 
+library(tidyr)
+library(igraph)
+library(hrbrthemes)
+library(ggraph)
+library(elasticsearchr)
+library(ggplot2)
+library(maps)
+library("httpuv")
+library("maps")
+
+````
+
+
+#Load package "httpuv" and Twitter Api
+#Connect to Twitter Api
+######Must Creat Titter App Before Projeding#####
+#Creat Twitter APP https://rtweet.info/articles/auth.html
+######Must Creat Titter App Before Projeding#####
+
+```{r, include=TRUE}
+
+## install httpuv if not already
+if (!requireNamespace("httpuv", quietly = TRUE)) {
+  install.packages("httpuv")
+}
+
+## load rtweet
+library(rtweet)
+
+## store api keys (these are fake example values; replace with your own keys)
+api_key <- "enter api key here"
+api_secret_key <- "enter api secret key here"
+
+## authenticate via web browser
+token <- create_token(
+  app = "enter name of app here",
+  consumer_key = api_key,
+  consumer_secret = api_secret_key)
+
+
+````
+
+
+#Set WD
+```{r, include=FALSE}
+setwd("enter working directory")
+getwd()
+```
+
+
+
+#Grab trends avaialble
+
+```{r, include=TRUE}
+
+rtweet::trends_available()
+rtweet::get_trends()
+````
+
+
+#Get Trends by geographics
+
+```{r, include=TRUE}
+ww_trends <- get_trends('worldwide')
+```
+
+
+
+#Top Trends
+
+```{r, include=TRUE}
+
+glimpse(ww_trends)
+```
+
+# pull 10000 tweets that used the "#Covid19" hashtag and Map
+#Will Need Google Maps API Key https://developers.google.com/maps/documentation/javascript/get-api-key
+#Must use console to select 1: Yes
+
+
+
+```{r, include=TRUE}
+
+(Covid19 <- search_tweets("#Covid19", geocode = lookup_coords("United States"), n=10000, is_retweet = FALSE, 
+                         retryonratelimit = FALSE)) 
+#Add Lat & Long then create map plot
+Covid19 <- lat_lng(Covid19)
+
+par(mar = c(0, 0, 0, 0))
+maps::map("state", lwd = .25)
+
+with(Covid19, points(lng, lat, pch = 20, cex = .75, col = rgb(0, .3, .7, .75)))
+````
+
+
+#Create Time Series
+```{r, include=TRUE}
+#Create Time Series
+ts_data(Covid19)
+ts_plot(Covid19)
+````
+
+
+
+
+#Clean data by remove unnecasry columns
+````{r, include=TRUE}
+CV1 <- Covid19 %>% select('user_id', 'created_at', 'is_retweet', 'screen_name', 'text', 'source', 'favorite_count', 'retweet_count', 'hashtags', 'media_type', 'location', 'followers_count', 'friends_count', 'favourites_count', 'lat', 'lng', 'lang')
+````
+
+```{r, include=TRUE}
+view(CV1)
+summary(CV1)
+```
+
+
+#As a Matrix As Character
+
+````{r, include=TRUE}
+CV1 <- as.data.frame(CV1)
+CV1 <- apply(CV1,2,as.character)
+````
+
+
+#Write to CSV
+
+```{r, include=TRUE}
+
+write.csv(CV1, 'CV1.csv')
+
+````
+
+
+
+
+
+
